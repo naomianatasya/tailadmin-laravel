@@ -1,0 +1,28 @@
+name: Laravel CI/CD Docker Deploy
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-deploy:
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker Image
+        run: docker build -t naonaomie_docker-tailadmin-laravel:beta .
+
+      - name: Login Docker Hub
+        run: echo "${{ secrets.DOCKER_PASS }}" | docker login -u "${{ secrets.DOCKER_USER }}" --password-stdin
+
+      - name: Push Docker Image
+        run: docker push naonaomie_docker-tailadmin-laravel:beta
+
+      - name: Stop old container
+        run: docker stop laravel || true && docker rm laravel || true
+
+      - name: Run new container
+        run: docker run -d --name laravel -p 8090:80 naonaomie_docker-tailadmin-laravel:beta
